@@ -13,19 +13,20 @@ jobs:
   test:
     name: Test Suite
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Read Go version
+      - name: Read Go version from .go-version
         id: go-version
         run: |
           GO_VERSION=$(cat .go-version)
           echo "version=$GO_VERSION" >> $GITHUB_OUTPUT
 
-      - name: Set up Go
+      - name: Set up Go ${{ steps.go-version.outputs.version }}
         uses: actions/setup-go@v4
         with:
           go-version: ${{ steps.go-version.outputs.version }}
@@ -34,11 +35,11 @@ jobs:
       - name: Install go-junit-report
         run: go install github.com/jstemmer/go-junit-report@latest
 
-      - name: Run tests
+      - name: Run tests with race detection and coverage
         run: |
           go test -v -race -coverprofile=coverage.txt ./... 2>&1 | tee test_output.txt
 
-      - name: Generate JUnit XML
+      - name: Generate JUnit XML report
         if: always()
         run: |
           cat test_output.txt | go-junit-report > junit.xml
